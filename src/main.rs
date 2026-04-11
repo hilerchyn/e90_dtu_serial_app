@@ -70,7 +70,7 @@ async fn main() {
             Err(e) => eprintln!("[{formatted_time_str}] {:?}", e),
         }
 
-        thread::sleep(Duration::from_secs(3));
+        thread::sleep(Duration::from_millis(50));
         let buf = "from_mac_mini".as_bytes();
         match port.write(buf) {
             Ok(_) => {
