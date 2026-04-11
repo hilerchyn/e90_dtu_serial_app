@@ -36,7 +36,7 @@ async fn main() {
         match port.read(serial_buf.as_mut_slice()) {
             Ok(t) => {
                 // 't' is the number of bytes read
-                println!("[{formatted_time_str}] Received: {:?}", &serial_buf[..t]);
+                //println!("[{formatted_time_str}] Received: {:?}", &serial_buf[..t]);
 
                 println!(
                     "[{formatted_time_str}] Received: {:?}",
@@ -67,7 +67,32 @@ async fn main() {
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
-            Err(e) => eprintln!("[{formatted_time_str}] {:?}", e),
+            Err(e) => {
+                eprintln!("[{formatted_time_str}] {:?}", e);
+
+                // WRITING
+                let data_point = DataPointBuilder::new()
+                    .table("signle")
+                    .field("point", FieldDataType::Integer(199))
+                    .datetime(Utc::now())
+                    .build()
+                    .unwrap();
+
+                match influxdb_client.write_one(data_point).await {
+                    Ok(cluster_uuid_opt) => {
+                        println!(
+                            "[{formatted_time_str}] writing db successful : cluster_uuid = {:?}",
+                            cluster_uuid_opt
+                        );
+                    }
+                    Err(error_detail) => {
+                        println!(
+                            "[{formatted_time_str}] write db failure : {:?}",
+                            error_detail
+                        );
+                    }
+                }
+            }
         }
 
         thread::sleep(Duration::from_millis(50));
