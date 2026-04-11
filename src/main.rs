@@ -1,14 +1,24 @@
-use chrono::Local;
+use chrono::{Local, Utc};
+use influxdb3::InfluxDbClientBuilder;
+use influxdb3::{DataPointBuilder, FieldDataType};
 use serialport;
 use std::io::Read;
 use std::thread;
 use std::time::Duration;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let ports = serialport::available_ports().expect("No ports found!");
     for p in ports {
         println!("{}", p.port_name);
     }
+
+    // CONNECTING
+    let influxdb_client = InfluxDbClientBuilder::new()
+        .server_endpoint("http://127.0.0.1:8181")
+        .token("apiv3_r04ea4SSIafZ9enFYijF4uRsLBh_1rHsIKdyyEy5jwfXQkcrdUI0sNo8MGgymxnFcJBwZxHeR6aBIIsFiPv7Gw")
+        .database("lora")
+        .build().unwrap();
 
     // 1. Configure and open the port
     let mut port = serialport::new("/dev/ttyUSB0", 9600) // Replace with your port
@@ -32,6 +42,29 @@ fn main() {
                     "[{formatted_time_str}] Received: {:?}",
                     String::from_utf8(serial_buf.clone())
                 );
+
+                // WRITING
+                let data_point = DataPointBuilder::new()
+                    .table("signle")
+                    .field("point", FieldDataType::Integer(99))
+                    .datetime(Utc::now())
+                    .build()
+                    .unwrap();
+
+                match influxdb_client.write_one(data_point).await {
+                    Ok(cluster_uuid_opt) => {
+                        println!(
+                            "[{formatted_time_str}] writing db successful : cluster_uuid = {:?}",
+                            cluster_uuid_opt
+                        );
+                    }
+                    Err(error_detail) => {
+                        println!(
+                            "[{formatted_time_str}] write db failure : {:?}",
+                            error_detail
+                        );
+                    }
+                }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
             Err(e) => eprintln!("[{formatted_time_str}] {:?}", e),

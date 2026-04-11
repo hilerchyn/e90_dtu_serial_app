@@ -5,4 +5,6 @@ edition = "2024"
 
 [dependencies]
 chrono = "0.4.44"
+influxdb3 = "0.2.0"
 serialport = "4.9.0"
+tokio = { version = "1.47", features = ["full"] }
