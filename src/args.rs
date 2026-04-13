@@ -30,7 +30,7 @@ pub struct Args {
     #[arg(short = 'n', long, default_value_t = String::from("ttyUSB"))]
     pub serial_name_part: String,
     #[arg(short = 'b', long, default_value_t = 9600)]
-    pub searial_baud_rate: u32,
+    pub serial_baud_rate: u32,
 
     #[arg(long, default_value_t = false)]
     pub debug: bool,

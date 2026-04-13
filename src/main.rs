@@ -32,7 +32,7 @@ async fn main() {
         .unwrap();
 
     // 1. Configure and open the port
-    let mut port = serialport::new(serial_port, args.searial_baud_rate) // Replace with your port
+    let mut port = serialport::new(serial_port, args.serial_baud_rate) // Replace with your port
         .timeout(Duration::from_millis(args.infflux_timeout))
         .open()
         .expect("Failed to open port");
