@@ -32,7 +32,7 @@ async fn main() {
         .unwrap();
 
     // 1. Configure and open the port
-    let mut port = serialport::new(serial_port, args.baud_rate) // Replace with your port
+    let mut port = serialport::new(serial_port, args.searial_baud_rate) // Replace with your port
         .timeout(Duration::from_millis(args.infflux_timeout))
         .open()
         .expect("Failed to open port");
@@ -45,18 +45,20 @@ async fn main() {
         let now = Local::now();
         let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-        if args.enable_rx {
+        if args.rx_enable {
             match port.read(serial_buf.as_mut_slice()) {
                 Ok(t) => {
                     // 't' is the number of bytes read
-                    //println!("[{formatted_time_str}] Received: {:?}", &serial_buf[..t]);
+                    if args.debug {
+                        println!("[{formatted_time_str}] Received: {:?}", &serial_buf[..t]);
+                    }
 
                     println!(
                         "[{formatted_time_str}] Received: {:?}",
                         String::from_utf8(serial_buf.clone())
                     );
 
-                    if args.enable_influx {
+                    if args.influx_enable {
                         // WRITING
                         let data_point = DataPointBuilder::new()
                             .table("signle")
@@ -85,7 +87,7 @@ async fn main() {
                 Err(e) => {
                     eprintln!("[{formatted_time_str}] {:?}", e);
 
-                    if args.enable_influx {
+                    if args.influx_enable {
                         // WRITING
                         let data_point = DataPointBuilder::new()
                             .table("signle")
@@ -112,14 +114,14 @@ async fn main() {
                 }
             }
 
-            if args.receive_sleep > 0 {
-                thread::sleep(Duration::from_millis(args.receive_sleep));
+            if args.rx_sleep > 0 {
+                thread::sleep(Duration::from_millis(args.rx_sleep));
             }
         }
 
-        if args.enable_tx {
-            if args.write_sleep > 0 {
-                thread::sleep(Duration::from_millis(args.write_sleep));
+        if args.tx_enable {
+            if args.tx_sleep > 0 {
+                thread::sleep(Duration::from_millis(args.tx_sleep));
             }
 
             let buf = "from_mac_mini".as_bytes();
