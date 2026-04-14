@@ -1,7 +1,12 @@
 use chrono::{Local, Utc};
+use futures::prelude::*;
+
 use influxdb3::InfluxDbClientBuilder;
 use influxdb3::http_client::InfluxDbClient;
 use influxdb3::{DataPointBuilder, FieldDataType};
+
+use influxdb2::Client;
+use influxdb2::models::DataPoint;
 
 use crate::args;
 
@@ -9,6 +14,7 @@ pub struct Influx<'a> {
     pub cfg: &'a args::Args,
 
     client_v3: InfluxDbClient,
+    client_v2: Client,
 }
 
 impl<'a> Influx<'a> {
@@ -21,9 +27,16 @@ impl<'a> Influx<'a> {
             .build()
             .unwrap();
 
+        let influxdb2_client = Client::new(
+            args.influx_endpoint.clone(),
+            args.influx_org.clone(),
+            args.influx_token.clone(),
+        );
+
         Self {
             cfg: args,
             client_v3: influxdb_client,
+            client_v2: influxdb2_client,
         }
     }
 
@@ -35,6 +48,24 @@ impl<'a> Influx<'a> {
 
         let now = Local::now();
         let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        if self.cfg.infflux_version == 2 {
+            let points = vec![
+                DataPoint::builder("cpu")
+                    .tag("host", "server01")
+                    .tag("region", "us-west")
+                    .field("usage", 0.64_f64)
+                    .build()
+                    .unwrap(),
+            ];
+
+            self.client_v2
+                .write(&self.cfg.influx_bucket, stream::iter(points))
+                .await
+                .unwrap();
+
+            return;
+        }
 
         // WRITING
         let data_point = DataPointBuilder::new()

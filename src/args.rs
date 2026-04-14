@@ -19,6 +19,11 @@ pub struct Args {
     pub infflux_timeout: u64, // 毫秒
     #[arg(long, default_value_t = 3)]
     pub infflux_version: u32,
+    // InfluxDB V2
+    #[arg( long = "org", default_value_t = String::from("tao"))]
+    pub influx_org: String,
+    #[arg( long = "bucket", default_value_t = String::from("lora"))]
+    pub influx_bucket: String,
 
     // 接收消息
     #[arg(short = 'r', long, default_value_t = false, value_parser = clap::value_parser!(bool))]
