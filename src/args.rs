@@ -3,6 +3,9 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    #[arg(long = "direction", default_value_t = String::from("rx"))]
+    pub direction: String,
+
     // InfluxDB
     #[arg(short = 'e', long, default_value_t = false, value_parser = clap::value_parser!(bool))]
     pub influx_enable: bool,

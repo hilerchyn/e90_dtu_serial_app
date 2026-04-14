@@ -15,7 +15,7 @@ async fn rx_function<F>(
     args: &args::Args,
     serial_port: &mut Box<dyn SerialPort>,
     influxdb_client: &InfluxDbClient,
-    callback: F,
+    callback: Option<F>,
 ) where
     F: Fn(&args::Args, &mut Box<dyn SerialPort>),
 {
@@ -68,7 +68,9 @@ async fn rx_function<F>(
                 }
             }
 
-            callback(args, serial_port);
+            if let Some(tx_fn) = callback {
+                tx_fn(args, serial_port);
+            }
         }
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
         Err(e) => {
@@ -103,7 +105,7 @@ async fn rx_function<F>(
 }
 
 // 串口发送函数
-fn tx_function(args: &args::Args, serial_port: &mut Box<dyn SerialPort>) {
+fn tx_callback(args: &args::Args, serial_port: &mut Box<dyn SerialPort>) {
     // 收到消息以后再写入消息
     if !args.tx_enable {
         return;
@@ -160,6 +162,39 @@ async fn main() {
 
     // 3. Continuously read in a loop
     loop {
-        rx_function(&args, port.by_ref(), &influxdb_client, tx_function).await;
+        // 先接收(rx)再发送(tx)
+        if args.direction == "rx" {
+            rx_function(&args, port.by_ref(), &influxdb_client, Some(tx_callback)).await;
+        }
+        // 先发送(tx)再接收(rx)
+        if args.direction == "tx" {
+            // 收到消息以后再写入消息
+            if !args.tx_enable {
+                continue;
+            }
+
+            if args.tx_sleep > 0 {
+                thread::sleep(Duration::from_millis(args.tx_sleep));
+            }
+
+            let now = Local::now();
+            let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+            let buf = "from_mac_mini".as_bytes();
+            match port.write(buf) {
+                Ok(_) => {
+                    println!("[{formatted_time_str}] write success");
+                    rx_function(
+                        &args,
+                        port.by_ref(),
+                        &influxdb_client,
+                        None::<Box<dyn Fn(&args::Args, &mut Box<dyn SerialPort>)>>,
+                    )
+                    .await;
+                }
+                Err(e) => {
+                    println!("[{formatted_time_str}] write error: {}", e);
+                }
+            }
+        }
     }
 }
