@@ -98,7 +98,7 @@ async fn main() {
 
     // 1. Configure and open the port
     let mut port = serialport::new(serial_port, args.serial_baud_rate)
-        .timeout(Duration::from_millis(args.infflux_timeout))
+        .timeout(Duration::from_millis(args.influx_timeout))
         .open()
         .expect("Failed to open port");
 

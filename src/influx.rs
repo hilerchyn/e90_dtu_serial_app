@@ -49,7 +49,7 @@ impl<'a> Influx<'a> {
         let now = Local::now();
         let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-        if self.cfg.infflux_version == 2 {
+        if self.cfg.influx_version == 2 {
             let points = vec![
                 DataPoint::builder("cpu")
                     .tag("host", "server01")

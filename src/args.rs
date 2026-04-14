@@ -16,9 +16,9 @@ pub struct Args {
     #[arg(short = 'd', long, default_value_t = String::from("lora"))]
     pub influx_database: String,
     #[arg(long, default_value_t = 1000)]
-    pub infflux_timeout: u64, // 毫秒
+    pub influx_timeout: u64, // 毫秒
     #[arg(long, default_value_t = 3)]
-    pub infflux_version: u32,
+    pub influx_version: u32,
     // InfluxDB V2
     #[arg( long = "org", default_value_t = String::from("tao"))]
     pub influx_org: String,
