@@ -1,20 +1,20 @@
 mod args;
+mod influx;
 
-use chrono::{Local, Utc};
+use chrono::Local;
 use clap::Parser;
-use influxdb3::InfluxDbClientBuilder;
-use influxdb3::http_client::InfluxDbClient;
-use influxdb3::{DataPointBuilder, FieldDataType};
 use serialport::{self, SerialPort};
 use std::io::Read;
 use std::thread;
 use std::time::Duration;
 
+use crate::influx::Influx;
+
 // 串口接收函数
-async fn rx_function<F>(
+async fn rx_function<'a, F>(
     args: &args::Args,
     serial_port: &mut Box<dyn SerialPort>,
-    influxdb_client: &InfluxDbClient,
+    influxdb_client: &Influx<'a>,
     callback: Option<F>,
 ) where
     F: Fn(&args::Args, &mut Box<dyn SerialPort>),
@@ -37,36 +37,12 @@ async fn rx_function<F>(
             if args.debug {
                 println!("[{formatted_time_str}] Received: {:?}", &serial_buf[..t]);
             }
-
             println!(
                 "[{formatted_time_str}] Received: {:?}",
                 String::from_utf8(serial_buf.clone())
             );
 
-            if args.influx_enable {
-                // WRITING
-                let data_point = DataPointBuilder::new()
-                    .table("signle")
-                    .field("point", FieldDataType::Integer(99))
-                    .datetime(Utc::now())
-                    .build()
-                    .unwrap();
-
-                match influxdb_client.write_one(data_point).await {
-                    Ok(cluster_uuid_opt) => {
-                        println!(
-                            "[{formatted_time_str}] writing db successful : cluster_uuid = {:?}",
-                            cluster_uuid_opt
-                        );
-                    }
-                    Err(error_detail) => {
-                        println!(
-                            "[{formatted_time_str}] write db failure : {:?}",
-                            error_detail
-                        );
-                    }
-                }
-            }
+            influxdb_client.write().await;
 
             if let Some(tx_fn) = callback {
                 tx_fn(args, serial_port);
@@ -75,31 +51,7 @@ async fn rx_function<F>(
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
         Err(e) => {
             eprintln!("[{formatted_time_str}] {:?}", e);
-
-            if args.influx_enable {
-                // WRITING
-                let data_point = DataPointBuilder::new()
-                    .table("signle")
-                    .field("point", FieldDataType::Integer(199))
-                    .datetime(Utc::now())
-                    .build()
-                    .unwrap();
-
-                match influxdb_client.write_one(data_point).await {
-                    Ok(cluster_uuid_opt) => {
-                        println!(
-                            "[{formatted_time_str}] writing db successful : cluster_uuid = {:?}",
-                            cluster_uuid_opt
-                        );
-                    }
-                    Err(error_detail) => {
-                        println!(
-                            "[{formatted_time_str}] write db failure : {:?}",
-                            error_detail
-                        );
-                    }
-                }
-            }
+            influxdb_client.write().await;
         }
     }
 }
@@ -142,16 +94,10 @@ async fn main() {
         }
     }
 
-    // CONNECTING
-    let influxdb_client = InfluxDbClientBuilder::new()
-        .server_endpoint(&args.influx_endpoint)
-        .token(&args.influx_token)
-        .database(&args.influx_database)
-        .build()
-        .unwrap();
+    let influx = influx::Influx::init(&args);
 
     // 1. Configure and open the port
-    let mut port = serialport::new(serial_port, args.serial_baud_rate) // Replace with your port
+    let mut port = serialport::new(serial_port, args.serial_baud_rate)
         .timeout(Duration::from_millis(args.infflux_timeout))
         .open()
         .expect("Failed to open port");
@@ -164,10 +110,9 @@ async fn main() {
     loop {
         // 先接收(rx)再发送(tx)
         if args.direction == "rx" {
-            rx_function(&args, port.by_ref(), &influxdb_client, Some(tx_callback)).await;
-        }
-        // 先发送(tx)再接收(rx)
-        if args.direction == "tx" {
+            rx_function(&args, port.by_ref(), &influx, Some(tx_callback)).await;
+        } else if args.direction == "tx" {
+            // 先发送(tx)再接收(rx)
             // 收到消息以后再写入消息
             if !args.tx_enable {
                 continue;
@@ -182,11 +127,13 @@ async fn main() {
             let buf = "from_mac_mini".as_bytes();
             match port.write(buf) {
                 Ok(_) => {
-                    println!("[{formatted_time_str}] write success");
+                    if args.debug {
+                        println!("[{formatted_time_str}] write success");
+                    }
                     rx_function(
                         &args,
                         port.by_ref(),
-                        &influxdb_client,
+                        &influx,
                         None::<Box<dyn Fn(&args::Args, &mut Box<dyn SerialPort>)>>,
                     )
                     .await;
@@ -195,6 +142,9 @@ async fn main() {
                     println!("[{formatted_time_str}] write error: {}", e);
                 }
             }
+        } else {
+            println!("no matched direction");
+            break;
         }
     }
 }

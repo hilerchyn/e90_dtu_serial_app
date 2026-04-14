@@ -17,6 +17,8 @@ pub struct Args {
     pub influx_database: String,
     #[arg(long, default_value_t = 1000)]
     pub infflux_timeout: u64, // 毫秒
+    #[arg(long, default_value_t = 3)]
+    pub infflux_version: u32,
 
     // 接收消息
     #[arg(short = 'r', long, default_value_t = false, value_parser = clap::value_parser!(bool))]
