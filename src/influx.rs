@@ -51,10 +51,10 @@ impl<'a> Influx<'a> {
 
         if self.cfg.influx_version == 2 {
             let points = vec![
-                DataPoint::builder("cpu")
-                    .tag("host", "server01")
-                    .tag("region", "us-west")
-                    .field("usage", 0.64_f64)
+                DataPoint::builder("rx")
+                    //.tag("host", "server01")
+                    //.tag("region", "us-west")
+                    .field("value", 99)
                     .build()
                     .unwrap(),
             ];
