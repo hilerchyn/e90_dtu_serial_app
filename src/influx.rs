@@ -10,6 +10,11 @@ use influxdb2::models::DataPoint;
 
 use crate::args;
 
+pub trait Repository {
+    fn init(args: &args::Args) -> impl Repository;
+    async fn write(&self);
+}
+
 pub struct Influx<'a> {
     pub cfg: &'a args::Args,
 
@@ -17,8 +22,8 @@ pub struct Influx<'a> {
     client_v2: Client,
 }
 
-impl<'a> Influx<'a> {
-    pub fn init(args: &'a args::Args) -> Self {
+impl<'a> Repository for Influx<'a> {
+    fn init(args: &args::Args) -> impl Repository {
         // CONNECTING
         let influxdb_client = InfluxDbClientBuilder::new()
             .server_endpoint(&args.influx_endpoint)
@@ -33,15 +38,14 @@ impl<'a> Influx<'a> {
             args.influx_token.clone(),
         );
 
-        Self {
+        Influx {
             cfg: args,
             client_v3: influxdb_client,
             client_v2: influxdb2_client,
         }
     }
 
-    // 写入数据
-    pub async fn write(&self) {
+    async fn write(&self) {
         if !self.cfg.influx_enable {
             return;
         }
@@ -92,4 +96,8 @@ impl<'a> Influx<'a> {
             }
         }
     }
+}
+
+impl<'a> Influx<'a> {
+    // 写入数据
 }
