@@ -69,7 +69,8 @@ fn tx_callback(args: &args::Args, serial_port: &mut Box<dyn SerialPort>) {
 
     let now = Local::now();
     let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
-    let buf = "from_mac_mini".as_bytes();
+    let buf = args.tx_payload.as_bytes();
+
     match serial_port.write(buf) {
         Ok(_) => {
             println!("[{formatted_time_str}] write success");
