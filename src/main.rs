@@ -9,14 +9,12 @@ use std::thread;
 use std::time::Duration;
 
 use crate::influx::Influx;
-use crate::influx::Repository;
 
 // 串口接收函数
 async fn rx_function<'a, F>(
     args: &args::Args,
     serial_port: &mut Box<dyn SerialPort>,
-    //influxdb_client: &Influx<'a>,
-    influxdb_client: &impl Repository,
+    influxdb_client: &Influx<'a>,
     callback: Option<F>,
 ) where
     F: Fn(&args::Args, &mut Box<dyn SerialPort>),
