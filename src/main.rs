@@ -126,7 +126,7 @@ async fn main() {
 
             let now = Local::now();
             let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
-            let buf = "from_mac_mini".as_bytes();
+            let buf = args.tx_payload.as_bytes();
             //match port.write(buf) {
             match port.write_all(buf) {
                 Ok(_) => {
