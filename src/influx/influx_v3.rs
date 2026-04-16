@@ -3,13 +3,14 @@ use chrono::{Local, Utc};
 use influxdb3::InfluxDbClientBuilder;
 use influxdb3::http_client::InfluxDbClient;
 use influxdb3::{DataPointBuilder, FieldDataType};
+use crate::args;
 
 pub struct Client {
     inner: InfluxDbClient,
 }
 
 impl Client {
-    pub fn from_args(args: &crate::args::Args) -> Self {
+    pub fn from_args(args: &args::Args) -> Self {
         let influxdb_client = InfluxDbClientBuilder::new()
             .server_endpoint(&args.influx_endpoint)
             .token(&args.influx_token)
@@ -25,7 +26,7 @@ impl Client {
 
 #[async_trait]
 impl super::InfluxWriter for Client {
-    async fn write(&self, cfg: &crate::args::Args) {
+    async fn write(&self, cfg: &args::Args) {
         let now = Local::now();
         let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
