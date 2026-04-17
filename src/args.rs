@@ -30,6 +30,8 @@ pub struct Args {
     pub rx_enable: bool,
     #[arg(short = 's', long, default_value_t = 100)]
     pub rx_sleep: u64, // 毫秒
+    #[arg(long, default_value_t = 128)]
+    pub rx_buffer_size: usize,
 
     // 发送消息
     #[arg(short = 'w', long, default_value_t = false, value_parser = clap::value_parser!(bool))]

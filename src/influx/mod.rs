@@ -7,7 +7,7 @@ use crate::args;
 
 #[async_trait]
 pub trait InfluxWriter: Send + Sync {
-    async fn write(&self, cfg: &args::Args);
+    async fn write(&self, cfg: &args::Args, value: i64);
 }
 
 pub struct Influx<'a> {
@@ -27,11 +27,11 @@ impl<'a> Influx<'a> {
     }
 
     // 写入数据
-    pub async fn write(&self) {
+    pub async fn write(&self, value: i64) {
         if !self.cfg.influx_enable {
             return;
         }
 
-        self.writer.write(self.cfg).await;
+        self.writer.write(self.cfg, value).await;
     }
 }

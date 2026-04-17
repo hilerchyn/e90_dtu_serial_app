@@ -1,6 +1,6 @@
+use crate::args;
 use async_trait::async_trait;
 use influxdb2::models::DataPoint;
-use crate::args;
 
 pub struct Client {
     inner: influxdb2::Client,
@@ -19,12 +19,12 @@ impl Client {
 
 #[async_trait]
 impl super::InfluxWriter for Client {
-    async fn write(&self, cfg: &args::Args) {
+    async fn write(&self, cfg: &args::Args, value: i64) {
         let points = vec![
             DataPoint::builder("rx")
                 //.tag("host", "server01")
                 //.tag("region", "us-west")
-                .field("value", 99)
+                .field("value", value)
                 .build()
                 .unwrap(),
         ];

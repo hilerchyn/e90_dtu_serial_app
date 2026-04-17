@@ -1,9 +1,9 @@
+use crate::args;
 use async_trait::async_trait;
 use chrono::{Local, Utc};
 use influxdb3::InfluxDbClientBuilder;
 use influxdb3::http_client::InfluxDbClient;
 use influxdb3::{DataPointBuilder, FieldDataType};
-use crate::args;
 
 pub struct Client {
     inner: InfluxDbClient,
@@ -26,14 +26,14 @@ impl Client {
 
 #[async_trait]
 impl super::InfluxWriter for Client {
-    async fn write(&self, cfg: &args::Args) {
+    async fn write(&self, cfg: &args::Args, value: i64) {
         let now = Local::now();
         let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
         // WRITING
         let data_point = DataPointBuilder::new()
             .table("signle")
-            .field("point", FieldDataType::Integer(99))
+            .field("point", FieldDataType::Integer(value))
             .datetime(Utc::now())
             .build()
             .unwrap();

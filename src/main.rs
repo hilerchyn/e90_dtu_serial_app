@@ -27,7 +27,7 @@ async fn rx_function<'a, F>(
         thread::sleep(Duration::from_millis(args.rx_sleep));
     }
 
-    let mut serial_buf: Vec<u8> = vec![0; 256];
+    let mut serial_buf: Vec<u8> = vec![0; args.rx_buffer_size];
     let now = Local::now();
     let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
@@ -42,7 +42,7 @@ async fn rx_function<'a, F>(
                 String::from_utf8(serial_buf.clone())
             );
 
-            influxdb_client.write().await;
+            influxdb_client.write(99).await;
 
             if let Some(tx_fn) = callback {
                 tx_fn(args, serial_port);
@@ -50,8 +50,8 @@ async fn rx_function<'a, F>(
         }
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
         Err(e) => {
-            eprintln!("[{formatted_time_str}] receive error: {:?}", e);
-            influxdb_client.write().await;
+            eprintln!("[{formatted_time_str}] {:?}", e);
+            influxdb_client.write(199).await;
         }
     }
 }
@@ -71,8 +71,8 @@ fn tx_callback(args: &args::Args, serial_port: &mut Box<dyn SerialPort>) {
     let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
     let buf = args.tx_payload.as_bytes();
 
-    //match serial_port.write(buf) {
-    match serial_port.write_all(buf) {
+    match serial_port.write(buf) {
+        //match serial_port.write_all(buf) {
         Ok(_) => {
             println!("[{formatted_time_str}] write success");
         }
@@ -127,8 +127,8 @@ async fn main() {
             let now = Local::now();
             let formatted_time_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
             let buf = args.tx_payload.as_bytes();
-            //match port.write(buf) {
-            match port.write_all(buf) {
+            match port.write(buf) {
+                //match port.write_all(buf) {
                 Ok(_) => {
                     if args.debug {
                         println!("[{formatted_time_str}] write success");
