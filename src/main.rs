@@ -50,7 +50,7 @@ async fn rx_function<'a, F>(
         }
         Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
         Err(e) => {
-            eprintln!("[{formatted_time_str}] {:?}", e);
+            eprintln!("[{formatted_time_str}] receive error: {:?}", e);
             influxdb_client.write().await;
         }
     }
